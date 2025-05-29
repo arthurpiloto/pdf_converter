@@ -11,28 +11,41 @@ const extractEspectroDeRenda = (text) => {
 	const lines = text.split('\n');
 	let inDataSection = false;
 
-	for (const line of lines) {
-		// Detecta o início da seção de dados
-		if (line.includes('Número de Salários') && line.includes('Número de Alunos')) {
+	for (let i = 0; i < lines.length; i++) {
+		const line = lines[i].trim();
+
+		// Detecta o início da seção de dados procurando pela string de cabeçalho concatenada
+		if (line.includes('Número de SaláriosNúmero de Alunos')) {
 			extractedData.push(['Número de Salários', 'Número de Alunos']); // Adiciona cabeçalhos
-			inDataSection = true;
-			continue;
-		}
-		// Detecta o fim da seção de dados
-		if (line.includes('Total de Registros:')) {
-			inDataSection = false;
-			break;
+			inDataSection = true; // Ativa a flag para começar a extrair dados
+			continue; // Pula para a próxima iteração do loop, que será a primeira linha de dados
 		}
 
-		if (inDataSection && line.trim() !== '') {
-			// Divide a linha pela vírgula e remove as aspas e espaços em branco
-			const parts = line
-				.split(',')
-				.map((s) => s.replace(/"/g, '').trim())
-				.filter((s) => s !== '');
-			if (parts.length === 2) {
-				// Tenta converter para número, caso contrário, mantém como string
-				extractedData.push(parts.map((p) => (isNaN(p) ? p : Number(p))));
+		// Se já estamos na seção de dados, podemos procurar pelo fim ou pelos dados
+		if (inDataSection) {
+			// Detecta o fim da seção de dados SOMENTE SE JÁ ESTAMOS NA SEÇÃO DE DADOS
+			if (line.includes('Total de Registros:')) {
+				inDataSection = false; // Desativa a flag
+				break; // Sai do loop
+			}
+
+			// Se estamos na seção de dados e não é a linha de fim, processa como linha de dados
+			if (line.trim() !== '') {
+				// Se a linha não estiver vazia
+				// Regex para extrair dois grupos de dígitos de uma linha concatenada.
+				// ^(\d+): Captura o primeiro grupo de dígitos (Número de Salários) do início da linha.
+				// (\d{1,4})$: Captura o segundo grupo de dígitos (Número de Alunos) com 1 a 4 dígitos no final da linha.
+				// Essa é uma heurística baseada nos exemplos fornecidos, onde o segundo número é tipicamente menor.
+				const match = line.match(/^(\d+)(\d{1,4})$/);
+
+				if (match && match.length === 3) {
+					// match[0] é a string completa, match[1] e match[2] são os grupos capturados.
+					extractedData.push([Number(match[1]), Number(match[2])]);
+				} else {
+					console.warn(
+						`[EspectroDeRenda] Linha de dados não corresponde ao padrão esperado (salário/alunos): "${line.trim()}"`,
+					);
+				}
 			}
 		}
 	}
