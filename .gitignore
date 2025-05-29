@@ -1,0 +1,48 @@
+# Dependências do Node
+/node_modules
+/npm-debug.log
+/.pnp/
+.pnp.js
+
+# Variáveis de Ambiente
+.env
+
+# Logs e Dados Temporários
+/logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# Diretórios de Uploads
+/uploads
+
+# Diretórios de Build / Distribuição
+/dist
+/build
+/out
+
+# Arquivos temporários do VS Code
+.vscode/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.history/
+.eslintcache
+
+# IDEs e Editores
+.idea/             # IntelliJ IDEA
+.vs/               # Visual Studio
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.bak
+
+# Arquivos de Sistema
+.DS_Store          # macOS
+Thumbs.db          # Windows

@@ -1,0 +1,10 @@
+/* public/style.css */
+body {
+    font-family: 'Inter', sans-serif;
+}
+
+/* Custom styles for better aesthetics can go here if needed,
+   but Tailwind CSS handles most of it. */
+input[type="file"] {
+    cursor: pointer;
+}
