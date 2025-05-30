@@ -99,7 +99,165 @@ const extractGeralMatriculaNiveis = (text) => {
 	return { gradData, postGradData, totalGeral };
 };
 
+/**
+ * Função para extrair dados dos PDFs de alunos matriculados (Presencial e EAD).
+ * Organiza os dados por Grau Acadêmico (Bacharelado/Licenciatura) em diferentes outputs,
+ * com detalhes de Curso, Turno, Cidade e Quantidade de Alunos.
+ *
+ * @param {string} text - O texto completo extraído do PDF.
+ * @param {string} modality - A modalidade do curso ('Presencial' ou 'EAD'). Usado para logs e, futuramente, se houver diferença de parsing.
+ * @returns {{bachareladoData: Array<Array<any>>, licenciaturaData: Array<Array<any>>, overallTotals: Array<Array<any>>}}
+ */
+const toTitleCase = (str) => {
+	if (!str) return '';
+	const minorWords = new Set([
+		'a',
+		'as',
+		'o',
+		'os',
+		'e',
+		'ou',
+		'nem',
+		'mas',
+		'porém',
+		'contudo',
+		'todavia',
+		'entretanto',
+		'no entanto',
+		'de',
+		'da',
+		'do',
+		'das',
+		'dos',
+		'em',
+		'na',
+		'no',
+		'nas',
+		'nos',
+		'para',
+		'com',
+		'por',
+		'sem',
+		'sob',
+		'sobre',
+		'entre',
+		'após',
+		'até',
+		'contra',
+		'desde',
+		'durante',
+		'mediante',
+		'perante',
+		'segundo',
+		'trás',
+		'um',
+		'uma',
+		'uns',
+		'umas',
+		'suas',
+		'ao',
+		'à',
+		'aos',
+		'às',
+		'del',
+	]);
+
+	const parts = str.toLowerCase().split(/(\s+|-|\/)/);
+
+	let result = [];
+	let isFirstWordOfPhrase = true;
+
+	for (let i = 0; i < parts.length; i++) {
+		let part = parts[i];
+
+		if (part.match(/^\s+$/) || part === '-' || part === '/') {
+			result.push(part);
+			isFirstWordOfPhrase = true;
+		} else {
+			if (isFirstWordOfPhrase || !minorWords.has(part)) {
+				result.push(part.charAt(0).toUpperCase() + part.slice(1));
+			} else {
+				result.push(part);
+			}
+			isFirstWordOfPhrase = false;
+		}
+	}
+	return result.join('');
+};
+const extractMatriculados = (text) => {
+	const bachareladoData = [
+		['Curso', 'Turno', 'Cidade', 'Grau Acadêmico', 'Quantidade de Alunos'],
+	];
+	const licenciaturaData = [
+		['Curso', 'Turno', 'Cidade', 'Grau Acadêmico', 'Quantidade de Alunos'],
+	];
+	const overallTotals = [['Categoria', 'Quantidade']];
+
+	const lines = text.split('\n');
+
+	let currentCourseName = '';
+	let currentTurno = '';
+	let currentCity = '';
+
+	const courseInfoRegex =
+		/^([a-z]{2,5})\s*-\s*(.+?)\s*-\s*(mtn|n)\s*-\s*([a-zçéàèáéíóúãõâêîôûü\s]+(?:-[a-zçéàèáéíóúãõâêîôûü\s]+)*)$/;
+
+	for (let i = 0; i < lines.length; i++) {
+		const line = lines[i].trim();
+
+		const courseInfoMatch = line.match(courseInfoRegex);
+		if (courseInfoMatch) {
+			currentCourseName = toTitleCase(courseInfoMatch[2].trim());
+			currentTurno = courseInfoMatch[3].toUpperCase(); // Converte de volta para maiúsculas para a saída
+			currentCity = toTitleCase(courseInfoMatch[4].trim());
+
+			if (lines[i + 1]) {
+				const concatenatedDegreeQuantityLine = lines[i + 1].trim();
+				const degreeQuantityMatch = concatenatedDegreeQuantityLine.match(
+					/^(bacharelado|licenciatura)(\d+)$/,
+				);
+
+				if (degreeQuantityMatch && degreeQuantityMatch.length === 3) {
+					const currentGrauAcademico = degreeQuantityMatch[1].trim();
+					const currentQuantity = Number(degreeQuantityMatch[2]);
+
+					const row = [
+						currentCourseName,
+						currentTurno,
+						currentCity,
+						currentGrauAcademico.charAt(0).toUpperCase() +
+							currentGrauAcademico.slice(1), // Capitaliza a primeira letra
+						currentQuantity,
+					];
+
+					if (currentGrauAcademico === 'bacharelado') {
+						bachareladoData.push(row);
+					} else if (currentGrauAcademico === 'licenciatura') {
+						licenciaturaData.push(row);
+					}
+
+					i += 1;
+					if (lines[i + 1] && lines[i + 1].trim().startsWith('total:')) {
+						i++;
+					}
+					continue;
+				}
+			}
+		}
+
+		if (line.startsWith('total geral:')) {
+			const totalGeralMatch = line.match(/total geral:\s*(\d+)$/);
+			if (totalGeralMatch) {
+				overallTotals.push(['Total Geral', Number(totalGeralMatch[1])]);
+				continue;
+			}
+		}
+	}
+	return { bachareladoData, licenciaturaData, overallTotals };
+};
+
 module.exports = {
 	extractEspectroDeRenda,
 	extractGeralMatriculaNiveis,
+	extractMatriculados,
 };

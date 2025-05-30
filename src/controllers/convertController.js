@@ -1,4 +1,3 @@
-// src/controllers/convertController.js
 const fs = require('fs');
 const pdfParser = require('../utils/pdfParser');
 const excelGenerator = require('../utils/excelGenerator');
@@ -47,6 +46,31 @@ const convertPdfToExcel = async (req, res) => {
 			}
 
 			excelFileName = 'quantitativo_alunos_matriculados.xlsx';
+		} else if (
+			pdfText.includes('relatório quantitativo de alunos matriculados') &&
+			(pdfText.includes('todos os cursos presenciais') ||
+				pdfText.includes('todos os cursos a distância'))
+		) {
+			if (pdfText.includes('todos os cursos presenciais')) {
+				excelFileName = 'quantitativo_alunos_matriculados_presenciais_detalhado.xlsx';
+			} else if (pdfText.includes('todos os cursos a distância')) {
+				excelFileName = 'quantitativo_alunos_matriculados_ead_detalhado.xlsx';
+			}
+
+			const { bachareladoData, licenciaturaData, overallTotals } =
+				dataExtractors.extractMatriculados(pdfText);
+
+			workbook = excelGenerator.createWorkbook();
+
+			if (bachareladoData.length > 1) {
+				excelGenerator.addSheet(workbook, bachareladoData, 'Bacharelado');
+			}
+			if (licenciaturaData.length > 1) {
+				excelGenerator.addSheet(workbook, licenciaturaData, 'Licenciatura');
+			}
+			if (overallTotals.length > 1) {
+				excelGenerator.addSheet(workbook, overallTotals, 'Total Geral');
+			}
 		} else {
 			// Se nenhuma condição específica de PDF for encontrada, exporta texto bruto
 			extractedData = [['Texto Bruto do PDF']];
