@@ -11,26 +11,25 @@ const convertPdfToExcel = async (req, res) => {
 
 	const pdfFilePath = req.file.path;
 	let excelFileName = `${req.file.originalname.replace(/\.pdf$/i, '')}.xlsx`;
-
 	let workbook = null;
 	let extractedData = [];
 	let sheetName = 'Dados Extraídos';
 
 	try {
 		// 1. Extrair texto do PDF
-		const pdfText = await pdfParser.extractText(pdfFilePath);
+		const pdfText = (await pdfParser.extractText(pdfFilePath)).toLowerCase();
 
 		// 2. Detectar o tipo de PDF e extrair dados
 		if (
-			pdfText.includes('Lista do Espectro de Renda') &&
-			pdfText.includes('Número de SaláriosNúmero de Alunos')
+			pdfText.includes('lista do espectro de renda') &&
+			pdfText.includes('número de saláriosnúmero de alunos')
 		) {
 			extractedData = dataExtractors.extractEspectroDeRenda(pdfText);
 			sheetName = 'Espectro de Renda';
-			excelFileName = 'Espectro_de_Renda.xlsx';
+			excelFileName = 'espectro_de_renda.xlsx';
 		} else if (
-			pdfText.includes('Relatório Quantitativo de Alunos Matriculados') &&
-			pdfText.includes('Ano-Semestre Matrícula:')
+			pdfText.includes('relatório quantitativo de alunos matriculados') &&
+			pdfText.includes('ano-semestre matrícula:')
 		) {
 			const { gradData, postGradData, totalGeral } =
 				dataExtractors.extractGeralMatriculaNiveis(pdfText);

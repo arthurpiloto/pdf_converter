@@ -14,14 +14,14 @@ const extractEspectroDeRenda = (text) => {
 	for (let i = 0; i < lines.length; i++) {
 		const line = lines[i].trim();
 
-		if (line.includes('Número de SaláriosNúmero de Alunos')) {
+		if (line.includes('número de saláriosnúmero de alunos')) {
 			extractedData.push(['Número de Salários', 'Número de Alunos']);
 			inDataSection = true;
 			continue;
 		}
 
 		if (inDataSection) {
-			if (line.includes('Total de Registros:')) {
+			if (line.includes('total de registros:')) {
 				inDataSection = false;
 				break;
 			}
@@ -53,17 +53,17 @@ const extractGeralMatriculaNiveis = (text) => {
 	let currentSection = '';
 
 	for (const line of lines) {
-		if (line.includes('Ano-Semestre Matrícula:')) {
+		if (line.includes('ano-semestre matrícula:')) {
 			currentSection = 'Graduação';
 			continue;
 		}
 
-		if (line.includes('Pós-Graduação') && currentSection === 'Graduação') {
+		if (line.includes('pós-graduação') && currentSection === 'Graduação') {
 			currentSection = 'Pós-Graduação';
 			continue;
 		}
 
-		if (line.includes('Total de Alunos:')) {
+		if (line.includes('total de alunos:')) {
 			const match = line.match(/Total de Alunos:\s*(\d+)/);
 			if (match) {
 				totalGeral.push(['Total de Alunos', Number(match[1])]);
