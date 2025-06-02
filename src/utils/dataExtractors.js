@@ -1,5 +1,82 @@
 // src/utils/dataExtractors.js
 
+const toTitleCase = (str) => {
+	if (!str) return '';
+	const minorWords = new Set([
+		'a',
+		'as',
+		'o',
+		'os',
+		'e',
+		'ou',
+		'nem',
+		'mas',
+		'porém',
+		'contudo',
+		'todavia',
+		'entretanto',
+		'no entanto',
+		'de',
+		'da',
+		'do',
+		'das',
+		'dos',
+		'em',
+		'na',
+		'no',
+		'nas',
+		'nos',
+		'para',
+		'com',
+		'por',
+		'sem',
+		'sob',
+		'sobre',
+		'entre',
+		'após',
+		'até',
+		'contra',
+		'desde',
+		'durante',
+		'mediante',
+		'perante',
+		'segundo',
+		'trás',
+		'um',
+		'uma',
+		'uns',
+		'umas',
+		'suas',
+		'ao',
+		'à',
+		'aos',
+		'às',
+		'del',
+	]);
+
+	const parts = str.toLowerCase().split(/(\s+|-|\/)/);
+
+	let result = [];
+	let isFirstWordOfPhrase = true;
+
+	for (let i = 0; i < parts.length; i++) {
+		let part = parts[i];
+
+		if (part.match(/^\s+$/) || part === '-' || part === '/') {
+			result.push(part);
+			isFirstWordOfPhrase = true;
+		} else {
+			if (isFirstWordOfPhrase || !minorWords.has(part)) {
+				result.push(part.charAt(0).toUpperCase() + part.slice(1));
+			} else {
+				result.push(part);
+			}
+			isFirstWordOfPhrase = false;
+		}
+	}
+	return result.join('');
+};
+
 /**
  * Função para extrair dados do PDF "Espectro de renda.pdf".
  * Espera um formato de duas colunas: "Número de Salários" e "Número de Alunos".
@@ -108,82 +185,6 @@ const extractGeralMatriculaNiveis = (text) => {
  * @param {string} modality - A modalidade do curso ('Presencial' ou 'EAD'). Usado para logs e, futuramente, se houver diferença de parsing.
  * @returns {{bachareladoData: Array<Array<any>>, licenciaturaData: Array<Array<any>>, overallTotals: Array<Array<any>>}}
  */
-const toTitleCase = (str) => {
-	if (!str) return '';
-	const minorWords = new Set([
-		'a',
-		'as',
-		'o',
-		'os',
-		'e',
-		'ou',
-		'nem',
-		'mas',
-		'porém',
-		'contudo',
-		'todavia',
-		'entretanto',
-		'no entanto',
-		'de',
-		'da',
-		'do',
-		'das',
-		'dos',
-		'em',
-		'na',
-		'no',
-		'nas',
-		'nos',
-		'para',
-		'com',
-		'por',
-		'sem',
-		'sob',
-		'sobre',
-		'entre',
-		'após',
-		'até',
-		'contra',
-		'desde',
-		'durante',
-		'mediante',
-		'perante',
-		'segundo',
-		'trás',
-		'um',
-		'uma',
-		'uns',
-		'umas',
-		'suas',
-		'ao',
-		'à',
-		'aos',
-		'às',
-		'del',
-	]);
-
-	const parts = str.toLowerCase().split(/(\s+|-|\/)/);
-
-	let result = [];
-	let isFirstWordOfPhrase = true;
-
-	for (let i = 0; i < parts.length; i++) {
-		let part = parts[i];
-
-		if (part.match(/^\s+$/) || part === '-' || part === '/') {
-			result.push(part);
-			isFirstWordOfPhrase = true;
-		} else {
-			if (isFirstWordOfPhrase || !minorWords.has(part)) {
-				result.push(part.charAt(0).toUpperCase() + part.slice(1));
-			} else {
-				result.push(part);
-			}
-			isFirstWordOfPhrase = false;
-		}
-	}
-	return result.join('');
-};
 const extractMatriculados = (text) => {
 	const bachareladoData = [
 		['Curso', 'Turno', 'Cidade', 'Grau Acadêmico', 'Quantidade de Alunos'],
