@@ -71,6 +71,20 @@ const convertPdfToExcel = async (req, res) => {
 			if (overallTotals.length > 1) {
 				excelGenerator.addSheet(workbook, overallTotals, 'Total Geral');
 			}
+		} else if (pdfText.includes('relatório de quantitativos de alunos por sexo e ingresso')) {
+			const { extractedData: sexoIngressoData, overallTotals: sexoIngressoOverallTotals } =
+				dataExtractors.extractSexoEIngresso(pdfText);
+
+			workbook = excelGenerator.createWorkbook();
+
+			if (sexoIngressoData.length > 1) {
+				excelGenerator.addSheet(workbook, sexoIngressoData, 'Dados por Ingresso');
+			}
+			if (sexoIngressoOverallTotals.length > 1) {
+				excelGenerator.addSheet(workbook, sexoIngressoOverallTotals, 'Total Geral');
+			}
+
+			excelFileName = 'sexo_e_ingresso.xlsx';
 		} else {
 			// Se nenhuma condição específica de PDF for encontrada, exporta texto bruto
 			extractedData = [['Texto Bruto do PDF']];

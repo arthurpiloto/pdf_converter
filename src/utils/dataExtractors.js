@@ -257,8 +257,164 @@ const extractMatriculados = (text) => {
 	return { bachareladoData, licenciaturaData, overallTotals };
 };
 
+/**
+ * Função para extrair dados do PDF "Sexo e Ingresso 2025 1.pdf".
+ * Organiza os dados por Curso, Forma de Ingresso, Homens e Mulheres.
+ *
+ * @param {string} text - O texto completo extraído do PDF.
+ * @returns {Array<Array<any>>} Array de arrays representando as linhas e colunas.
+ */
+const extractSexoEIngresso = (text) => {
+	const extractedData = [['Curso', 'Cidade', 'Forma de Ingresso', 'Homens', 'Mulheres']];
+	const overallTotals = [['Categoria', 'Homens', 'Mulheres']]; // Para o total geral final
+
+	const lines = text.split('\n');
+	let currentCourse = '';
+	let currentCity = '';
+	let inCourseSection = false;
+
+	let currentCourseTotalHomens = 0;
+	let currentCourseTotalMulheres = 0;
+
+	const trySplitNumbers = (concatenatedDigitsStr) => {
+		const s = String(concatenatedDigitsStr);
+		const len = s.length;
+
+		if (len >= 2) {
+			const potentialM = Number(s.slice(-2));
+			const potentialH = Number(s.slice(0, len - 2));
+			if (len > 2 || (len === 2 && potentialH > 0)) {
+				return [potentialH, potentialM];
+			}
+		}
+
+		if (len >= 1) {
+			const potentialM = Number(s.slice(-1));
+			const potentialH = Number(s.slice(0, len - 1));
+			return [potentialH, potentialM];
+		}
+
+		if (len >= 3) {
+			const potentialM = Number(s.slice(-3));
+			const potentialH = Number(s.slice(0, len - 3));
+			if (len > 3 || (len === 3 && potentialM >= 100)) {
+				return [potentialH, potentialM];
+			}
+		}
+
+		return [0, 0];
+	};
+
+	const courseHeaderRegex =
+		/^([a-z]{2,5})\s*-\s*(.+?)\s*-\s*([a-zçéàèáéíóúãõâêîôûü\s]+(?:-[a-zçéàèáéíóúãõâêîôûü\s]+)*)$/;
+
+	for (let i = 0; i < lines.length; i++) {
+		const line = lines[i].trim();
+		const courseMatch = line.match(courseHeaderRegex);
+		if (courseMatch) {
+			if (inCourseSection) {
+				extractedData.push([
+					currentCourse,
+					currentCity,
+					'Total do Curso',
+					currentCourseTotalHomens,
+					currentCourseTotalMulheres,
+				]);
+			}
+
+			currentCourse = toTitleCase(courseMatch[2].trim());
+			currentCity = toTitleCase(courseMatch[3].trim());
+			inCourseSection = true;
+			currentCourseTotalHomens = 0;
+			currentCourseTotalMulheres = 0;
+
+			continue;
+		}
+
+		const overallTotalMatch = line.match(
+			/^total de homens:\s*(\d+)total de mulheres:\s*(\d+)$/,
+		);
+		if (overallTotalMatch) {
+			if (inCourseSection) {
+				extractedData.push([
+					currentCourse,
+					currentCity,
+					'Total do Curso',
+					currentCourseTotalHomens,
+					currentCourseTotalMulheres,
+				]);
+			}
+			overallTotals.push([
+				'Total Geral',
+				Number(overallTotalMatch[1]),
+				Number(overallTotalMatch[2]),
+			]);
+			break;
+		}
+
+		if (inCourseSection) {
+			const entryDataRawMatch = line.match(/(.+?)(\d+)$/);
+
+			if (entryDataRawMatch) {
+				let formaIngressoText = entryDataRawMatch[1].trim();
+				let allDigits = entryDataRawMatch[2];
+
+				if (
+					formaIngressoText.toLowerCase().startsWith('forma de ingressohomensmulheres') ||
+					formaIngressoText.toLowerCase().startsWith('forma de ingresso')
+				) {
+					continue;
+				}
+
+				const nextLine = lines[i + 1] ? lines[i + 1].trim() : '';
+				const totalEntryMatch = nextLine.match(/^total:(\d+)$/);
+
+				let extractedHomens, extractedMulheres;
+				let totalHomensFromNextLine = 0,
+					totalMulheresFromNextLine = 0;
+
+				[extractedHomens, extractedMulheres] = trySplitNumbers(allDigits);
+
+				if (totalEntryMatch) {
+					const totalAllDigits = totalEntryMatch[1];
+					[totalHomensFromNextLine, totalMulheresFromNextLine] =
+						trySplitNumbers(totalAllDigits);
+					if (
+						extractedHomens !== totalHomensFromNextLine ||
+						extractedMulheres !== totalMulheresFromNextLine
+					) {
+						extractedHomens = totalHomensFromNextLine;
+						extractedMulheres = totalMulheresFromNextLine;
+					}
+					i++;
+				}
+
+				if (formaIngressoText.toLowerCase().startsWith('total:')) {
+					continue;
+				}
+
+				formaIngressoText = toTitleCase(formaIngressoText);
+
+				extractedData.push([
+					currentCourse,
+					currentCity,
+					formaIngressoText,
+					extractedHomens,
+					extractedMulheres,
+				]);
+				currentCourseTotalHomens += extractedHomens;
+				currentCourseTotalMulheres += extractedMulheres;
+
+				continue;
+			}
+		}
+	}
+	return { extractedData, overallTotals };
+};
+
 module.exports = {
 	extractEspectroDeRenda,
 	extractGeralMatriculaNiveis,
 	extractMatriculados,
+	extractSexoEIngresso,
 };
